@@ -1,5 +1,5 @@
 import dns.resolver
-import whois
+import ipwhois
 
 with open('target.txt') as f:
     domains = [line.strip() for line in f.readlines()]
@@ -7,40 +7,53 @@ with open('target.txt') as f:
 ips = []
 resolved = []
 non_resolvable = []
-cloudflare = []
-for d in domains:
+for domain in domains:
     try:
-        result = dns.resolver.resolve(d, 'A')
+        result = dns.resolver.resolve(domain, 'A')
         for r in result:
-            print('A', d + ':', r.to_text())
+            print('A', domain + ':', r.to_text())
             ips.append(r.to_text())
-            resolved.append(d)
-    except:
-        non_resolvable.append(d)
+            resolved.append(domain)
+    except Exception:
+        non_resolvable.append(domain)
     try:
-        resultc = dns.resolver.resolve(d, 'CNAME')
-        for v in resultc:
-            print('CNAME : ', v.to_text())
+        result_cname = dns.resolver.resolve(domain, 'CNAME')
+        for v in result_cname:
+            print(f'CNAME : {v}')
             print('----------------------------------------------------')
-    except:
+    except Exception:
         pass
 
-print('')
 print('-------------')
-print("Non-Resolvable:")
-for ln in non_resolvable:
-    print(str(ln))
+if non_resolvable:
+    print("Non-Resolvable:")
+    for line in non_resolvable:
+        print(line)
+    print('-------------')
 
-print('')
-print('-------------')
-uniq = sorted(set(ips))
-print('Unique IPs for NMAP: ')
-for l in uniq:
-    print(str(l))
-
-
-uni = sorted(set(resolved))
-uniqness = list(uni)
+uniq = list(sorted(set(resolved)))
 with open('resolved.txt', 'a') as file:
-    for u in uniqness:
+    for u in uniq:
         file.write(u + '\n')
+# print('***************')
+result = []
+uniq = sorted(set(ips))
+
+for line in uniq:
+    try:
+        whois_description = ipwhois.IPWhois(line).lookup_whois()
+        whois_description = whois_description["nets"][0]['description']
+        organizations = ['cloudflare', 'google', 'imperva', 'twitter', 'level 3', 'zendesk', 'microsoft',
+                         'sendgrid']
+        blacklist = False
+        for organization in organizations:
+            if organization in whois_description.lower():
+                blacklist = True
+        if not blacklist:
+            result.append(line)
+    except ipwhois.exceptions.IPDefinedError:
+        print(f"{line} is private IP")
+
+print('Unique IPs for NMAP: ')
+for ip in sorted(set(result)):
+    print(ip)
