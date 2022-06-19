@@ -1,1 +1,2 @@
-
+ipwhois
+dnspython==2.2.0
