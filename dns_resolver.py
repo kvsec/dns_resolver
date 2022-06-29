@@ -55,5 +55,9 @@ for line in uniq:
         print(f"{line} is private IP")
 
 print('Unique IPs for NMAP: ')
-for ip in sorted(set(result)):
+uniqips = list(sorted(set(result)))
+with open('ips.txt', 'a') as ff:
+    for i in uniqips:
+        ff.write(i + '\n')
+for ip in uniqips:
     print(ip)
