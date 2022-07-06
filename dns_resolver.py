@@ -35,7 +35,7 @@ uniq = list(sorted(set(resolved)))
 with open('resolved.txt', 'a') as file:
     for u in uniq:
         file.write(u + '\n')
-# print('***************')
+
 result = []
 uniq = sorted(set(ips))
 
@@ -47,8 +47,12 @@ for line in uniq:
                          'sendgrid']
         blacklist = False
         for organization in organizations:
-            if organization in whois_description.lower():
-                blacklist = True
+            if whois_description is None:
+                pass
+            if whois_description is not None:
+                if organization in whois_description.lower():
+                    blacklist = True
+            else:pass
         if not blacklist:
             result.append(line)
     except ipwhois.exceptions.IPDefinedError:
