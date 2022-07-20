@@ -1,28 +1,45 @@
 import dns.resolver
 import ipwhois
+import socket
 
 with open('target.txt') as f:
     domains = [line.strip() for line in f.readlines()]
 
+all_ips = []
 ips = []
 resolved = []
 non_resolvable = []
+wcloudfront = []
+wcloudfront_ips = []
+
 for domain in domains:
-    try:
-        result = dns.resolver.resolve(domain, 'A')
-        for r in result:
-            print('A', domain + ':', r.to_text())
-            ips.append(r.to_text())
-            resolved.append(domain)
-    except Exception:
-        non_resolvable.append(domain)
     try:
         result_cname = dns.resolver.resolve(domain, 'CNAME')
         for v in result_cname:
-            print(f'CNAME : {v}')
-            print('----------------------------------------------------')
+            if 'cloudfront' in v.to_text():
+                wcloudfront.append(domain)
+            else:
+                print(f'CNAME : {v}')
     except Exception:
-        pass
+        exception_cname = socket.gethostbyaddr(domain)[0]
+        print(f'CNAME : {exception_cname}')
+        if 'cloudfront' in exception_cname:
+            wcloudfront.append(domain)
+        else:
+            pass
+
+    try:
+        result = dns.resolver.resolve(domain, 'A')
+        for r in result:
+            if domain not in wcloudfront:
+                print('A', domain + ':', r.to_text())
+                ips.append(r.to_text())
+                resolved.append(domain)
+            elif domain in wcloudfront:
+                print('A', domain + ':', r.to_text() + ' CLOUDFRONT')
+                wcloudfront_ips.append(r.to_text())
+    except Exception:
+        non_resolvable.append(domain)
 
 print('-------------')
 if non_resolvable:
@@ -43,8 +60,8 @@ for line in uniq:
     try:
         whois_description = ipwhois.IPWhois(line).lookup_whois()
         whois_description = whois_description["nets"][0]['description']
-        organizations = ['cloudflare', 'google', 'imperva', 'twitter', 'level 3', 'zendesk', 'microsoft',
-                         'sendgrid']
+        organizations = ['cloudflare', 'imperva', 'twitter', 'level 3', 'zendesk', 'microsoft',
+                         'sendgrid', 'cloudfront']
         blacklist = False
         for organization in organizations:
             if whois_description is None:
@@ -52,7 +69,10 @@ for line in uniq:
             if whois_description is not None:
                 if organization in whois_description.lower():
                     blacklist = True
-            else:pass
+            if line in wcloudfront_ips:
+                blacklist = True
+            else:
+                pass
         if not blacklist:
             result.append(line)
     except ipwhois.exceptions.IPDefinedError:
@@ -65,3 +85,18 @@ with open('ips.txt', 'a') as ff:
         ff.write(i + '\n')
 for ip in uniqips:
     print(ip)
+
+uniq_cloudfront = list(sorted(set(wcloudfront)))
+with open('cloudfront_resolved.txt', 'a') as clouddom:
+    for cld in uniq_cloudfront:
+        clouddom.write(cld + '\n')
+
+uniq_cloudfront_ips = list(sorted(set(wcloudfront_ips)))
+with open('cloudfront_ips.txt', 'a') as cloudip:
+    for cl in uniq_cloudfront_ips:
+        cloudip.write(cl + '\n')
+
+all_ipaddresses = uniq_cloudfront_ips + uniqips
+with open('all_ips.txt', 'a') as allip:
+    for ipaddr in all_ipaddresses:
+        allip.write(ipaddr + '\n')
