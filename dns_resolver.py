@@ -19,14 +19,16 @@ for domain in domains:
             if 'cloudfront' in v.to_text():
                 wcloudfront.append(domain)
             else:
-                print(f'CNAME : {v}')
+                print(f'CNAME: {v}')
     except Exception:
-        exception_cname = socket.gethostbyaddr(domain)[0]
-        print(f'CNAME : {exception_cname}')
-        if 'cloudfront' in exception_cname:
-            wcloudfront.append(domain)
-        else:
-            pass
+        try:
+            exception_cname = socket.gethostbyaddr(domain)[0]
+            if 'cloudfront' in exception_cname:
+                wcloudfront.append(domain)
+            else:
+                print(f'CNAME : {exception_cname}')
+        except:
+            print('No CNAME')
 
     try:
         result = dns.resolver.resolve(domain, 'A')
