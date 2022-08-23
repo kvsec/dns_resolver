@@ -1,8 +1,17 @@
 import dns.resolver
 import ipwhois
 import socket
+import argparse
 
-with open('target.txt') as f:
+parser = argparse.ArgumentParser(description="Dns_resolver usage:",
+                                 formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+parser.add_argument("-f", "--file", metavar='<FILE>', dest="filename", type=argparse.FileType('r'),
+                    help="file with subdomains")
+args = parser.parse_args()
+config = vars(args)
+filepath = args.filename
+
+with open(filepath.name) as f:
     domains = [line.strip() for line in f.readlines()]
 
 all_ips = []
