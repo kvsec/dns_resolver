@@ -10,6 +10,6 @@ Install:
 ```pip install dnspython==2.2.0```
 
 
-Run (the script require "<b>target.txt</b>" file to run):
+Run :
 
-<code>python3 dns_resolver.py</code>
+<code>python3 dns_resolver.py -f file</code>
